@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Recommender System</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            padding-top: 20px;
+            background-color: #f8f9fa;
+        }
+        .movie-card {
+            margin-bottom: 20px;
+            transition: transform 0.2s;
+        }
+        .movie-card:hover {
+            transform: scale(1.03);
+        }
+        .recommendation-container {
+            min-height: 300px;
+        }
+        .stars {
+            color: #ffc107;
+            cursor: pointer;
+        }
+        .tab-content {
+            padding: 20px;
+            background-color: white;
+            border-left: 1px solid #dee2e6;
+            border-right: 1px solid #dee2e6;
+            border-bottom: 1px solid #dee2e6;
+            border-radius: 0 0 0.25rem 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">Movie Recommendation System</h1>
+        
+        <div class="row">
+            <div class="col-12">
+                <ul class="nav nav-tabs" id="recommendationTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="user-tab" data-bs-toggle="tab" data-bs-target="#user-recommendations" type="button" role="tab" aria-controls="user-recommendations" aria-selected="true">
+                            User-based Recommendations
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="genre-tab" data-bs-toggle="tab" data-bs-target="#genre-recommendations" type="button" role="tab" aria-controls="genre-recommendations" aria-selected="false">
+                            Genre-based Recommendations
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="search-tab" data-bs-toggle="tab" data-bs-target="#search-movies" type="button" role="tab" aria-controls="search-movies" aria-selected="false">
+                            Search Movies
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="recommendationTabsContent">
+                    <!-- User-based Recommendations Tab -->
+                    <div class="tab-pane fade show active" id="user-recommendations" role="tabpanel" aria-labelledby="user-tab">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <form id="userRecommendationForm">
+                                    <div class="mb-3">
+                                        <label for="userSelect" class="form-label">Select User:</label>
+                                        <select class="form-select" id="userSelect" name="user_id" required>
+                                            <option value="">Select a user...</option>
+                                            {% for user in users %}
+                                            <option value="{{ user }}">User {{ user }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="numRecommendationsUser" class="form-label">Number of Recommendations:</label>
+                                        <input type="number" class="form-control" id="numRecommendationsUser" name="num_recommendations" min="1" max="20" value="5">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Get Recommendations</button>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <div class="row recommendation-container mt-4" id="userRecommendations">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    Select a user to get personalized movie recommendations.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Genre-based Recommendations Tab -->
+                    <div class="tab-pane fade" id="genre-recommendations" role="tabpanel" aria-labelledby="genre-tab">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <form id="genreRecommendationForm">
+                                    <div class="mb-3">
+                                        <label class="form-label">Select Genres:</label>
+                                        <div class="row">
+                                            {% for genre in genres %}
+                                            {% if genre != "(no genres listed)" %}
+                                            <div class="col-md-4">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" name="genres[]" value="{{ genre }}" id="genre{{ loop.index }}">
+                                                    <label class="form-check-label" for="genre{{ loop.index }}">
+                                                        {{ genre }}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="numRecommendationsGenre" class="form-label">Number of Recommendations:</label>
+                                        <input type="number" class="form-control" id="numRecommendationsGenre" name="num_recommendations" min="1" max="20" value="5">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Get Recommendations</button>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <div class="row recommendation-container mt-4" id="genreRecommendations">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    Select one or more genres to get movie recommendations.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Search Movies Tab -->
+                    <div class="tab-pane fade" id="search-movies" role="tabpanel" aria-labelledby="search-tab">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="movieSearch" class="form-label">Search Movies:</label>
+                                    <input type="text" class="form-control" id="movieSearch" placeholder="Type a movie title...">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row" id="searchResults">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    Type a movie title to search.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modal for Rating Movies -->
+        <div class="modal fade" id="rateMovieModal" tabindex="-1" aria-labelledby="rateMovieModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="rateMovieModalLabel">Rate Movie</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="rateMovieForm">
+                            <input type="hidden" id="rateUserId" name="user_id">
+                            <input type="hidden" id="rateMovieId" name="movie_id">
+                            
+                            <div class="mb-3">
+                                <label for="movieTitle" class="form-label">Movie:</label>
+                                <div id="movieTitle" class="fw-bold"></div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Your Rating:</label>
+                                <div class="stars">
+                                    <span class="star" data-value="1">★</span>
+                                    <span class="star" data-value="2">★</span>
+                                    <span class="star" data-value="3">★</span>
+                                    <span class="star" data-value="4">★</span>
+                                    <span class="star" data-value="5">★</span>
+                                </div>
+                                <input type="hidden" id="rating" name="rating" required>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="submitRating">Submit Rating</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // User Recommendation Form Submission
+            $('#userRecommendationForm').submit(function(e) {
+                e.preventDefault();
+                
+                var userId = $('#userSelect').val();
+                if (!userId) {
+                    alert('Please select a user.');
+                    return;
+                }
+                
+                $.ajax({
+                    url: '/recommend_by_user',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    beforeSend: function() {
+                        $('#userRecommendations').html('<div class="col-12 text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            displayRecommendations(response.recommendations, 'userRecommendations', userId);
+                        } else {
+                            $('#userRecommendations').html('<div class="col-12"><div class="alert alert-danger">' + response.error + '</div></div>');
+                        }
+                    },
+                    error: function() {
+                        $('#userRecommendations').html('<div class="col-12"><div class="alert alert-danger">An error occurred. Please try again.</div></div>');
+                    }
+                });
+            });
+            
+            // Genre Recommendation Form Submission
+            $('#genreRecommendationForm').submit(function(e) {
+                e.preventDefault();
+                
+                var genres = $('input[name="genres[]"]:checked').map(function() {
+                    return $(this).val();
+                }).get();
+                
+                if (genres.length === 0) {
+                    alert('Please select at least one genre.');
+                    return;
+                }
+                
+                $.ajax({
+                    url: '/recommend_by_genres',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    beforeSend: function() {
+                        $('#genreRecommendations').html('<div class="col-12 text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            displayRecommendations(response.recommendations, 'genreRecommendations');
+                        } else {
+                            $('#genreRecommendations').html('<div class="col-12"><div class="alert alert-danger">' + response.error + '</div></div>');
+                        }
+                    },
+                    error: function() {
+                        $('#genreRecommendations').html('<div class="col-12"><div class="alert alert-danger">An error occurred. Please try again.</div></div>');
+                    }
+                });
+            });
+            
+            // Movie Search
+            var searchTimeout;
+            $('#movieSearch').on('input', function() {
+                clearTimeout(searchTimeout);
+                
+                var query = $(this).val().trim();
+                if (query.length < 2) {
+                    $('#searchResults').html('<div class="col-12"><div class="alert alert-info">Type at least 2 characters to search.</div></div>');
+                    return;
+                }
+                
+                searchTimeout = setTimeout(function() {
+                    $.ajax({
+                        url: '/search_movies',
+                        type: 'GET',
+                        data: { query: query },
+                        beforeSend: function() {
+                            $('#searchResults').html('<div class="col-12 text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                if (response.movies.length > 0) {
+                                    displayMovies(response.movies, 'searchResults');
+                                } else {
+                                    $('#searchResults').html('<div class="col-12"><div class="alert alert-warning">No movies found matching "' + query + '".</div></div>');
+                                }
+                            } else {
+                                $('#searchResults').html('<div class="col-12"><div class="alert alert-danger">' + response.error + '</div></div>');
+                            }
+                        },
+                        error: function() {
+                            $('#searchResults').html('<div class="col-12"><div class="alert alert-danger">An error occurred. Please try again.</div></div>');
+                        }
+                    });
+                }, 500);
+            });
+            
+            // Display movie recommendations
+            function displayRecommendations(movies, containerId, userId) {
+                var container = $('#' + containerId);
+                
+                if (movies.length === 0) {
+                    container.html('<div class="col-12"><div class="alert alert-warning">No recommendations found.</div></div>');
+                    return;
+                }
+                
+                var html = '';
+                
+                $.each(movies, function(i, movie) {
+                    var genreString = Array.isArray(movie.genres) ? movie.genres.join(', ') : movie.genres;
+                    
+                    html += '<div class="col-md-4">';
+                    html += '<div class="card movie-card">';
+                    html += '<div class="card-body">';
+                    html += '<h5 class="card-title">' + movie.title + '</h5>';
+                    html += '<p class="card-text"><small class="text-muted">' + genreString + '</small></p>';
+                    
+                    if (userId) {
+                        html += '<button class="btn btn-sm btn-outline-primary rate-movie" data-movie-id="' + movie.id + '" data-movie-title="' + movie.title + '" data-user-id="' + userId + '">Rate this movie</button>';
+                    }
+                    
+                    html += '</div>';
+                    html += '</div>';
+                    html += '</div>';
+                });
+                
+                container.html(html);
+                
+                // Attach event handlers to the new buttons
+                $('.rate-movie').click(function() {
+                    var movieId = $(this).data('movie-id');
+                    var movieTitle = $(this).data('movie-title');
+                    var userId = $(this).data('user-id');
+                    
+                    $('#rateMovieId').val(movieId);
+                    $('#rateUserId').val(userId);
+                    $('#movieTitle').text(movieTitle);
+                    $('#rating').val('');
+                    $('.star').removeClass('active');
+                    
+                    $('#rateMovieModal').modal('show');
+                });
+            }
+            
+            // Display search results
+            function displayMovies(movies, containerId) {
+                var container = $('#' + containerId);
+                
+                var html = '';
+                
+                $.each(movies, function(i, movie) {
+                    var genreString = Array.isArray(movie.genres) ? movie.genres.join(', ') : movie.genres;
+                    
+                    html += '<div class="col-md-4">';
+                    html += '<div class="card movie-card">';
+                    html += '<div class="card-body">';
+                    html += '<h5 class="card-title">' + movie.title + '</h5>';
+                    html += '<p class="card-text"><small class="text-muted">' + genreString + '</small></p>';
+                    
+                    var userId = $('#userSelect').val();
+                    if (userId) {
+                        html += '<button class="btn btn-sm btn-outline-primary rate-movie" data-movie-id="' + movie.id + '" data-movie-title="' + movie.title + '" data-user-id="' + userId + '">Rate this movie</button>';
+                    }
+                    
+                    html += '</div>';
+                    html += '</div>';
+                    html += '</div>';
+                });
+                
+                container.html(html);
+                
+                // Attach event handlers to the new buttons
+                $('.rate-movie').click(function() {
+                    var movieId = $(this).data('movie-id');
+                    var movieTitle = $(this).data('movie-title');
+                    var userId = $(this).data('user-id');
+                    
+                    $('#rateMovieId').val(movieId);
+                    $('#rateUserId').val(userId);
+                    $('#movieTitle').text(movieTitle);
+                    $('#rating').val('');
+                    $('.star').removeClass('active');
+                    
+                    $('#rateMovieModal').modal('show');
+                });
+            }
+            
+            // Star rating
+            $('.star').hover(
+                function() {
+                    var value = $(this).data('value');
+                    highlightStars(value);
+                },
+                function() {
+                    var value = $('#rating').val();
+                    highlightStars(value);
+                }
+            );
+            
+            $('.star').click(function() {
+                var value = $(this).data('value');
+                $('#rating').val(value);
+                highlightStars(value);
+            });
+            
+            function highlightStars(value) {
+                $('.star').removeClass('active');
+                $('.star').each(function() {
+                    if ($(this).data('value') <= value) {
+                        $(this).addClass('active');
+                    }
+                });
+            }
+            
+            // Submit rating
+            $('#submitRating').click(function() {
+                var rating = $('#rating').val();
+                
+                if (!rating) {
+                    alert('Please select a rating.');
+                    return;
+                }
+                
+                $.ajax({
+                    url: '/rate_movie',
+                    type: 'POST',
+                    data: $('#rateMovieForm').serialize(),
+                    success: function(response) {
+                        if (response.success) {
+                            $('#rateMovieModal').modal('hide');
+                            alert('Rating submitted successfully!');
+                            
+                            // Refresh recommendations if needed
+                            $('#userRecommendationForm').submit();
+                        } else {
+                            alert('Error: ' + response.error);
+                        }
+                    },
+                    error: function() {
+                        alert('An error occurred. Please try again.');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
