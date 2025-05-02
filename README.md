@@ -24,8 +24,8 @@ movie-recommendation-system/
 ├── README.md               
 ├── templates/              
 │   └── index.html          
-├── data/                   
-└── models/                 
+├── data/     #automatically created              
+└── models/   #automatically created              
 ```
 
 ## Requirements
